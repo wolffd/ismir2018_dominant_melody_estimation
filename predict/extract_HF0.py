@@ -12,6 +12,8 @@ Fs = 22050
 hop = 256. / Fs
 pitch_corrected = False
 
+def_dataset_name = 'medleydb'
+
 #########################################################
 ## GET PATH FUNCTIONS: Functions to return paths
 def get_path():
@@ -25,14 +27,14 @@ def get_path():
     return path
 
 
-def get_path_to_dataset_audio():
-    audio_path = '{0}/medleydb_audio'.format(get_path())
+def get_path_to_dataset_audio(dataset_name = def_dataset_name):
+    audio_path = '{0}/{1}_audio'.format(get_path(),dataset_name)
     return audio_path
 
 
 def get_hf0_save_path(dataset_name):
-    if dataset_name == 'medleydb':
-        hf0_save_path = '{0}/medleydb_features/HF0s_STFT'.format(get_path())
+    if dataset_name != '':
+        hf0_save_path = '{0}/{1}_features/HF0s_STFT'.format(get_path(),dataset_name)
     else:
         hf0_save_path = os.path.realpath(__file__)
 
@@ -95,8 +97,9 @@ def main(audio_fpath, verbose=True):
                 out.close()
             if verbose:
                 print('{0} file is created'.format(track_name))
-        except:
-            if verbose:
+        except Exception as e:
+            if True or verbose:
+                print(e)
                 print('{0} file is not processed due to an error'.format(track_name))
 
         parameters_file = open('{0}/parameters.txt'.format(get_hf0_save_path(dataset_name=dataset_name)), 'w')

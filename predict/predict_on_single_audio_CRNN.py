@@ -31,6 +31,8 @@ SR = 22050
 hop_size = 256
 RNN = 'GRU'
 
+def_dataset_name = 'medleydb'
+
 #########################################################
 ## GET PATH FUNCTIONS: Functions to return paths
 def get_path():
@@ -50,9 +52,8 @@ def get_path_to_quantized_annotations():
     return quantized_annotations_path
 
 
-def get_path_to_dataset_audio():
-    audio_path = '{0}/medleydb_audio'.format(get_path())
-    return audio_path
+def get_path_to_dataset_audio(dataset_name = def_dataset_name):
+    return extract_HF0.get_path_to_dataset_audio(dataset_name)
 
 
 def get_path_to_pitch_estimations():
@@ -62,16 +63,16 @@ def get_path_to_pitch_estimations():
     return results_path
 
 
-def get_model_output_save_path():
-    model_output_save_path = '{0}/medleydb_melody_results/C-RNN_results'.format(get_path())
+def get_model_output_save_path(dataset_name = def_dataset_name):
+    model_output_save_path = '{0}/{1}_melody_results/C-RNN_results'.format(get_path(),dataset_name)
     if not os.path.exists(model_output_save_path):
         os.makedirs(model_output_save_path)
 
     return model_output_save_path
 
 
-def get_dataset_splits_save_path():
-    dataset_splits_save_path = '{0}/medleydb_dataset_splits'.format(get_path())
+def get_dataset_splits_save_path(dataset_name = def_dataset_name):
+    dataset_splits_save_path = '{0}/{1}_dataset_splits'.format(get_path(), dataset_name)
 
     if not os.path.exists(dataset_splits_save_path):
         os.makedirs(dataset_splits_save_path)
@@ -79,10 +80,9 @@ def get_dataset_splits_save_path():
     return dataset_splits_save_path
 
 
-def get_hf0_path():
-    path = '{0}/medleydb_features/HF0s_STFT'.format(get_path())
+def get_hf0_path(dataset_name = def_dataset_name):
 
-    return path
+    return extract_HF0.get_hf0_save_path(dataset_name)
 
 
 def get_dataset_test_load_path():
@@ -363,6 +363,8 @@ def evaluate_melody_prediction(track_name, pitch_estimates, verbose):
 
 def load_model(model_weights_path=None):
     model = construct_model(number_of_patches, patch_size, feature_size, number_of_classes, step_notes, RNN=RNN)
+    print(model)
+    print(model_weights_path)
     if model_weights_path == None:
         model.load_weights('weights_C-RNN.h5')
     else:
@@ -428,17 +430,17 @@ def main_prediction(file_path, evaluate_results=False):
     '''
 
     ## Load the file: Either an audio file or HF0 estimation file
-    try:
-        if '.wav' == file_path[-4:]:
-            HF0 = extract_HF0.main(audio_fpath=file_path)
-        elif '.h5' == file_path[-3:]:
-            feats = h5py.File(HF0_fpath, 'r')
-            HF0 = np.array(feats['HF0'])
+#    try:
+  #      if '.wav' == file_path[-4:]:
+    HF0 = extract_HF0.main(audio_fpath=file_path)
+ #       elif '.h5' == file_path[-3:]:
+#            feats = h5py.File(HF0_fpath, 'r')
+#            HF0 = np.array(feats['HF0'])
 
-        track_name = os.path.basename(HF0_fpath).split('.h5')[0]
+    track_name = os.path.basename(HF0_fpath).split('.h5')[0]
 
-    except:
-        raise RuntimeError('Wav file or HF0 file could not be loaded!')
+ #   except:
+ #       raise RuntimeError('Wav file or HF0 file could not be loaded!')
 
     ## Load the model
     try:
@@ -475,7 +477,8 @@ def main_prediction(file_path, evaluate_results=False):
 if __name__ == '__main__':
     # Example usage:
     track_name = 'AClassicEducation_NightOwl'
+    # track_name = 'test'
     HF0_fpath = '{0}/{1}.h5'.format(get_hf0_path(),track_name)
     audio_fpath = '{0}/{1}.wav'.format(get_path_to_dataset_audio(),track_name)
-
+    print(audio_fpath)
     main_prediction(file_path=audio_fpath, evaluate_results=True)
