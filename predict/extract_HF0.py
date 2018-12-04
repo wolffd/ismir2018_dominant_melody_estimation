@@ -45,21 +45,23 @@ def get_hf0_save_path(dataset_name):
 ########################################
 
 
-def main(audio_fpath, verbose=True):
+def main(audio_fpath, dataset_name = 'medleydb', verbose=True):
     '''
     The main function that calls the source filter model module to extract the parameters
     :param audio_fpath: Input audio path
     :param verbose: To print procedure
     :return:
     '''
-    if 'medleydb' in audio_fpath:
-        dataset_name = 'medleydb'
-    else:
-        dataset_name = None
 
     train_parameter = 'HF0_standard'
 
-    track_name_original = os.path.basename(audio_fpath).split('.wav')[0]
+    
+    abbr_index = audio_fpath.find(dataset_name + "_audio") + len(dataset_name + "_audio") + 1
+    if (abbr_index < len(audio_fpath)):
+        track_name_original = audio_fpath[abbr_index:].split('.wav')[0]
+    else:
+        track_name_original = os.path.basename(audio_fpath).split('.wav')[0]
+
     if pitch_corrected:
         track_name = track_name_original + '_corrected_pitch'
     else:
@@ -98,7 +100,7 @@ def main(audio_fpath, verbose=True):
             if verbose:
                 print('{0} file is created'.format(track_name))
         except Exception as e:
-            if True or verbose:
+            if verbose:
                 print(e)
                 print('{0} file is not processed due to an error'.format(track_name))
 
@@ -143,14 +145,14 @@ def extract_HF0_from_dataset():
         extract_HF0_single_track(audio_fpath=audio_fpath, verbose=False)
 
 
-def extract_HF0_single_track(audio_fpath, verbose=True):
+def extract_HF0_single_track(audio_fpath, dataset_name = 'medleydb', verbose=True):
     '''
     Wrapper to main function
     :param audio_fpath: Input audio path
     :param verbose: To print procedure
     :return:
     '''
-    HF0 = main(audio_fpath=audio_fpath, verbose=verbose)
+    HF0 = main(audio_fpath=audio_fpath, dataset_name=dataset_name, verbose=verbose)
 
     return HF0
 

@@ -13,12 +13,14 @@ import keras as K
 
 import h5py
 import os
+import sys
 from sklearn.preprocessing import LabelBinarizer, normalize
 import csv
 import pandas as pd
 import mir_eval
 
 import extract_HF0
+import conversion
 
 # Parameters of the model are globally defined for the trained network
 number_of_patches = 20
@@ -56,9 +58,9 @@ def get_path_to_dataset_audio(dataset_name = def_dataset_name):
     return extract_HF0.get_path_to_dataset_audio(dataset_name)
 
 
-def get_path_to_pitch_estimations():
+def get_path_to_pitch_estimations(dataset_name = def_dataset_name):
     # Wrapper function
-    results_path = get_model_output_save_path()
+    results_path = get_model_output_save_path(dataset_name)
 
     return results_path
 
@@ -321,7 +323,8 @@ def evaluate_melody_prediction(track_name, pitch_estimates, verbose):
             track_name_original = track_name
 
         labels = get_labels(track_name=track_name_original)
-    except:
+    except Exception as e:
+        print(e)
         print('Error')
     if pitch_estimates is None:
         pitch_estimates = get_pitch_estimation_from_csv(track_name=track_name)
@@ -363,8 +366,6 @@ def evaluate_melody_prediction(track_name, pitch_estimates, verbose):
 
 def load_model(model_weights_path=None):
     model = construct_model(number_of_patches, patch_size, feature_size, number_of_classes, step_notes, RNN=RNN)
-    print(model)
-    print(model_weights_path)
     if model_weights_path == None:
         model.load_weights('weights_C-RNN.h5')
     else:
@@ -420,7 +421,7 @@ def get_evaluation_results_statistics(voicing_recall,
     return evaluation_results_statistics
 
 
-def main_prediction(file_path, evaluate_results=False):
+def main_prediction(file_path, dataset_name = 'medleydb', evaluate_results=False):
     '''
     main function to estimate melody from SF-NMF activations of a track. If the dataset is indicated, then the estimated
     pitch values are also evaluated. Note that the system here is trained with MedleyDB alone.
@@ -430,28 +431,31 @@ def main_prediction(file_path, evaluate_results=False):
     '''
 
     ## Load the file: Either an audio file or HF0 estimation file
-#    try:
-  #      if '.wav' == file_path[-4:]:
-    HF0 = extract_HF0.main(audio_fpath=file_path)
- #       elif '.h5' == file_path[-3:]:
-#            feats = h5py.File(HF0_fpath, 'r')
-#            HF0 = np.array(feats['HF0'])
+    try:
+        if '.wav' == file_path[-4:]:
+            HF0 = extract_HF0.main(audio_fpath=file_path, dataset_name = dataset_name)
+        elif '.h5' == file_path[-3:]:
+            feats = h5py.File(HF0_fpath, 'r')
+            HF0 = np.array(feats['HF0'])
 
-    track_name = os.path.basename(HF0_fpath).split('.h5')[0]
+        track_name = os.path.basename(HF0_fpath).split('.h5')[0]
 
- #   except:
- #       raise RuntimeError('Wav file or HF0 file could not be loaded!')
+    except Exception as e:
+        print(e)    
+        raise RuntimeError('Wav file or HF0 file could not be loaded!')
 
     ## Load the model
     try:
         model = load_model()
-    except:
+    except Exception as e:
+        print(e)    
         raise RuntimeError('Model could not be loaded!')
 
     ## Estimate the dominant melody
     try:
         pitch_estimates = get_prediction(HF0, model)
-    except:
+    except Exception as e:
+        print(e)    
         raise RuntimeError('An error occured in the melody estimation!')
 
     ## Save the estimations to a csv file
@@ -459,26 +463,66 @@ def main_prediction(file_path, evaluate_results=False):
         output_path = '{0}/{1}.csv'.format(get_model_output_save_path(),
                                            track_name)
         save_output(pitch_estimates, output_path)
-    except:
+    except Exception as e:
+        print(e)    
         output_path = '{0}.csv'.format(track_name)
         save_output(pitch_estimates, output_path)
 
     ## Evaluate the results if annotations are available
+    return True
     try:
         if evaluate_results:
             evaluation_results = evaluate_melody_prediction(track_name=track_name,
                                                             pitch_estimates=pitch_estimates,
                                                             verbose=True)
         return evaluation_results
-    except:
+    except Exception as e:
+        print(e)    
         raise RuntimeError('An error occured in the evaluation!')
 
 
 if __name__ == '__main__':
-    # Example usage:
-    track_name = 'AClassicEducation_NightOwl'
-    # track_name = 'test'
-    HF0_fpath = '{0}/{1}.h5'.format(get_hf0_path(),track_name)
-    audio_fpath = '{0}/{1}.wav'.format(get_path_to_dataset_audio(),track_name)
-    print(audio_fpath)
-    main_prediction(file_path=audio_fpath, evaluate_results=True)
+
+    # a dataset name can be input as the first argument, e.g. "python predict_on_single_audio mysupercooldataset"
+    # this assumes that there is a folder "mysupercooldataset_audio" in ../../ from this file
+    if len(sys.argv) >= 2:
+        dataset = sys.argv[1]
+        rootDir = get_path_to_dataset_audio(dataset)
+        for dirName, subdirList, fileList in os.walk(rootDir):
+            # print('Found directory: %s' % (dirName))
+            
+            abbr_index = dirName.find(dataset + "_audio") + len(dataset + "_audio") + 1
+            if (abbr_index < len(dirName)):
+                abbreviated_dirname = dirName[abbr_index:]
+            else:
+                abbreviated_dirname = ''
+            # print('Processing: %s' % (abbreviated_dirname))
+             
+            # make all the new safe paths
+            if not os.path.exists(get_model_output_save_path(dataset) + '/' + abbreviated_dirname):
+                os.makedirs(get_model_output_save_path(dataset) + '/' + abbreviated_dirname)
+                
+            if not os.path.exists(get_hf0_path(dataset) + '/' + abbreviated_dirname):
+                os.makedirs(get_hf0_path(dataset) + '/' + abbreviated_dirname)                
+            
+            for fname in fileList:
+                if not ('.wav' or '.mp3' or '.m4a' or '.mp4') in fname.lower():
+                    continue
+                # print('\t%s' % fname)
+                full_track_name = abbreviated_dirname + '/' + fname
+                track_name = full_track_name[:-4]
+                # track_name = 'test'
+                if not fname.lower().endswith('.wav'):
+                    conversion.convert_to_wav(rootDir + "/" + full_track_name)
+                
+                HF0_fpath = '{0}/{1}.h5'.format(get_hf0_path(dataset),track_name)
+                audio_fpath = '{0}/{1}.wav'.format(get_path_to_dataset_audio(dataset),track_name)
+                print("Processing: %s" % audio_fpath)
+                main_prediction(file_path=audio_fpath, dataset_name = dataset, evaluate_results=False)
+    else:
+        # Example usage:
+        track_name = 'AClassicEducation_NightOwl'
+        HF0_fpath = '{0}/{1}.h5'.format(get_hf0_path(),track_name)
+        audio_fpath = '{0}/{1}.wav'.format(get_path_to_dataset_audio(),track_name)
+        print(audio_fpath)
+        main_prediction(file_path=audio_fpath, evaluate_results=True)
