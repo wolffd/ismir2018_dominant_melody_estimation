@@ -513,16 +513,24 @@ if __name__ == '__main__':
                     full_track_name = abbreviated_dirname + '/' + fname
                     track_name = full_track_name[:-4]
                     # track_name = 'test'
+                    
+                    # convert to wav if transformed
+                    transformed = False
                     if not fname.lower().endswith('.wav'):
                         conversion.convert_to_wav(rootDir + "/" + full_track_name)
+                        transformed = True
                     
                     HF0_fpath = '{0}/{1}.h5'.format(get_hf0_path(dataset),track_name)
                     audio_fpath = '{0}/{1}.wav'.format(get_path_to_dataset_audio(dataset),track_name)
                     print("Processing: %s" % audio_fpath)
                     
                     main_prediction(file_path=audio_fpath, dataset_name = dataset, evaluate_results=False)
+                    
+                    if transformed and not fname.lower().endswith('.wav'):
+                        os.remove(rootDir + "/" + full_track_name[:-4] + '.wav')
+                        
                 except Exception as e: 
-                    print ('Warning: could not process file %s: %s' (full_track_name,str(e)))
+                    print ('Warning: could not process file %s: %s' % (full_track_name,str(e)))
     else:
         # Example usage:
         track_name = 'AClassicEducation_NightOwl'
