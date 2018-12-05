@@ -508,17 +508,21 @@ if __name__ == '__main__':
             for fname in fileList:
                 if not ('.wav' or '.mp3' or '.m4a' or '.mp4') in fname.lower():
                     continue
-                # print('\t%s' % fname)
-                full_track_name = abbreviated_dirname + '/' + fname
-                track_name = full_track_name[:-4]
-                # track_name = 'test'
-                if not fname.lower().endswith('.wav'):
-                    conversion.convert_to_wav(rootDir + "/" + full_track_name)
-                
-                HF0_fpath = '{0}/{1}.h5'.format(get_hf0_path(dataset),track_name)
-                audio_fpath = '{0}/{1}.wav'.format(get_path_to_dataset_audio(dataset),track_name)
-                print("Processing: %s" % audio_fpath)
-                main_prediction(file_path=audio_fpath, dataset_name = dataset, evaluate_results=False)
+                try:
+                    # print('\t%s' % fname)
+                    full_track_name = abbreviated_dirname + '/' + fname
+                    track_name = full_track_name[:-4]
+                    # track_name = 'test'
+                    if not fname.lower().endswith('.wav'):
+                        conversion.convert_to_wav(rootDir + "/" + full_track_name)
+                    
+                    HF0_fpath = '{0}/{1}.h5'.format(get_hf0_path(dataset),track_name)
+                    audio_fpath = '{0}/{1}.wav'.format(get_path_to_dataset_audio(dataset),track_name)
+                    print("Processing: %s" % audio_fpath)
+                    
+                    main_prediction(file_path=audio_fpath, dataset_name = dataset, evaluate_results=False)
+                except Exception as e: 
+                    print ('Warning: could not process file %s: %s' (full_track_name,str(e)))
     else:
         # Example usage:
         track_name = 'AClassicEducation_NightOwl'
