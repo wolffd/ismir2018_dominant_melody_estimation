@@ -55,7 +55,7 @@ def main(audio_fpath, dataset_name = 'medleydb', verbose=True):
 
     train_parameter = 'HF0_standard'
 
-    
+    # abbreviate trackname but allow for a subpath in it
     abbr_index = audio_fpath.find(dataset_name + "_audio") + len(dataset_name + "_audio") + 1
     if (abbr_index < len(audio_fpath)):
         track_name_original = audio_fpath[abbr_index:].split('.wav')[0]

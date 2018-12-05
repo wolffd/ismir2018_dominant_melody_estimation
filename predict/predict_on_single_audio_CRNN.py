@@ -435,11 +435,16 @@ def main_prediction(file_path, dataset_name = 'medleydb', evaluate_results=False
         if '.wav' == file_path[-4:]:
             HF0 = extract_HF0.main(audio_fpath=file_path, dataset_name = dataset_name)
         elif '.h5' == file_path[-3:]:
-            feats = h5py.File(HF0_fpath, 'r')
+            feats = h5py.File(file_path, 'r')
             HF0 = np.array(feats['HF0'])
 
-        track_name = os.path.basename(HF0_fpath).split('.h5')[0]
-
+        # abbreviate trackname but allow for a subpath in it
+        abbr_index = file_path.find(dataset_name + "_audio") + len(dataset_name + "_audio") + 1
+        if (abbr_index < len(file_path)):
+            track_name = file_path[abbr_index:].split('.wav')[0]
+        else:
+            track_name = os.path.basename(file_path).split('.wav')[0]
+            
     except Exception as e:
         print(e)    
         raise RuntimeError('Wav file or HF0 file could not be loaded!')
@@ -460,9 +465,10 @@ def main_prediction(file_path, dataset_name = 'medleydb', evaluate_results=False
 
     ## Save the estimations to a csv file
     try:
-        output_path = '{0}/{1}.csv'.format(get_model_output_save_path(),
+        output_path = '{0}/{1}.csv'.format(get_model_output_save_path(dataset_name = dataset_name),
                                            track_name)
         save_output(pitch_estimates, output_path)
+        print ('Saved melody in %s' %  output_path);
     except Exception as e:
         print(e)    
         output_path = '{0}.csv'.format(track_name)
