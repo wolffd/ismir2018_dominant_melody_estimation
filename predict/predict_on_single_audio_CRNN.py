@@ -512,7 +512,7 @@ if __name__ == '__main__':
                 os.makedirs(get_hf0_path(dataset) + '/' + abbreviated_dirname)                
             
             for fname in fileList:
-                if not ('.m4a') in fname.lower():
+                if not ('.aiff') in fname.lower():
                     continue
                 try:
                     # print('\t%s' % fname)
