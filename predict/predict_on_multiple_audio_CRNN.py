@@ -4,11 +4,11 @@
 
 import subprocess
 import threading
-# import multiprocessing
+import multiprocessing # https://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread
 
 from predict_on_single_audio_CRNN import *
 
-timeout = 60*60 # seconds
+process_timeout = 10 # seconds
 
 # RunCmd(["./someProg", "arg1"], 60).Run()
 #class RunCmd(threading.Thread):
@@ -75,12 +75,13 @@ if __name__ == '__main__':
                     
                     
                     # threading to stop if runs longer than timeout
-                    if threading:
-                        thread = Thread(target = main_prediction, args = (audio_fpath, dataset, False))
+                    if process_timeout > 0:
+                        thread = multiprocessing.Process(target = main_prediction, args = (audio_fpath, dataset, False))
                         thread.start()
-                        thread.join()
+                        thread.join(process_timeout)
                         
                         if thread.is_alive():
+                            print('Warning: terminating process due to exceeded timeout of %d seconds: %s' % (process_timeout, audio_fpath))
                             thread.terminate()      #use self.p.kill() if process needs a kill -9
                             thread.join()
                     else:
