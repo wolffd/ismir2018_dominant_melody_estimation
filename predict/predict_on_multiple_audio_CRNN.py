@@ -8,7 +8,7 @@ import multiprocessing # https://stackoverflow.com/questions/323972/is-there-any
 
 from predict_on_single_audio_CRNN import *
 
-process_timeout = 10 # seconds
+process_timeout = 60*60 # timeout for each process in seconds, here set to an hour
 
 # RunCmd(["./someProg", "arg1"], 60).Run()
 #class RunCmd(threading.Thread):
@@ -81,7 +81,7 @@ if __name__ == '__main__':
                         thread.join(process_timeout)
                         
                         if thread.is_alive():
-                            print('Warning: terminating process due to exceeded timeout of %d seconds: %s' % (process_timeout, audio_fpath))
+                            print(' !!!! Warning: terminating process due to exceeded timeout of %d seconds: %s !!!! ' % (process_timeout, audio_fpath))
                             thread.terminate()      #use self.p.kill() if process needs a kill -9
                             thread.join()
                     else:
