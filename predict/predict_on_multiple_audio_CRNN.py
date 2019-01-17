@@ -62,16 +62,21 @@ if __name__ == '__main__':
                     full_track_name = abbreviated_dirname + '/' + fname
                     track_name = full_track_name[:-4]
                     # track_name = 'test'
-                    
-                    # convert to wav if transformed
+
+                    HF0_fpath = '{0}/{1}.h5'.format(get_hf0_path(dataset),track_name)
+                    audio_fpath = '{0}/{1}.wav'.format(get_path_to_dataset_audio(dataset),track_name)
+
+                    if os.path.isfile(HF0_fpath):
+                        print("Skipping as features exist: %s" % audio_fpath)
+                        continue 
+
+                    print("Processing: %s" % audio_fpath)
+
+                    # convert to wav if necessary
                     transformed = False
                     if not fname.lower().endswith('.wav'):
                         conversion.convert_to_wav(rootDir + "/" + full_track_name)
                         transformed = True
-                    
-                    HF0_fpath = '{0}/{1}.h5'.format(get_hf0_path(dataset),track_name)
-                    audio_fpath = '{0}/{1}.wav'.format(get_path_to_dataset_audio(dataset),track_name)
-                    print("Processing: %s" % audio_fpath)
                     
                     
                     # threading to stop if runs longer than timeout
